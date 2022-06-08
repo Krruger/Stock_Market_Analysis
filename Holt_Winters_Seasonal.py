@@ -1,4 +1,7 @@
+import math
+
 import numpy as np
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from statsmodels.tsa.api import SimpleExpSmoothing
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,7 +21,10 @@ df.head()
 
 
 def split_data(df_log):
-    train_data, test_data = df_log[3:int(len(df_log)*0.8)], df_log[int(len(df_log)*0.8):]
+    # train_data, test_data = df_log[3:int(len(df_log)*0.8)], df_log[int(len(df_log)*0.8):
+    length = 250
+    train_data = df_log[:len(df_log)-length]
+    test_data = df_log[len(df_log)-length:]
     # plt.figure(figsize=(10,6))
     # plt.grid(True)
     # plt.xlabel('Dates')
@@ -41,3 +47,13 @@ plt.plot(test_data['Close'], label='Test')
 plt.plot(y_hat_avg['Holt_Winter'], label='Holt_Winter')
 plt.legend(loc='best')
 plt.show()
+
+# report performance
+mse = mean_squared_error(test_data['Close'], y_hat_avg['Holt_Winter'])
+print('MSE: '+str(mse))
+mae = mean_absolute_error(test_data['Close'], y_hat_avg['Holt_Winter'])
+print('MAE: '+str(mae))
+rmse = math.sqrt(mean_squared_error(test_data['Close'], y_hat_avg['Holt_Winter']))
+print('RMSE: '+str(rmse))
+mape = np.mean(np.abs(y_hat_avg['Holt_Winter'] - test_data['Close'])/np.abs(test_data['Close']))
+print('MAPE: '+str(mape))

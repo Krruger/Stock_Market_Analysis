@@ -1,7 +1,10 @@
+import math
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.api import ExponentialSmoothing
 dateparse = lambda dates: pd.datetime.strptime(dates, '%Y-%m-%d')
@@ -16,8 +19,11 @@ df.head()
 
 
 def split_data(df_log):
-    train_data, test_data = df_log[3:int(len(df_log)*0.95)], df_log[int(len(df_log)*0.95):]
+    # train_data, test_data = df_log[3:int(len(df_log)*0.95)], df_log[int(len(df_log)*0.95):]
     # plt.figure(figsize=(10,6))
+    length = 250
+    train_data = df_log[:len(df_log)-length]
+    test_data = df_log[len(df_log)-length:]
     # plt.grid(True)
     # plt.xlabel('Dates')
     # plt.ylabel('Closing Prices')
@@ -44,3 +50,13 @@ plt.show()
 #
 # predictions = model.predict(start=len(train_data), end=len(train_data) + len(test_data)-1)
 # print(predictions)
+
+# report performance
+mse = mean_squared_error(test_data['Close'], y_hat_avg)
+print('MSE: '+str(mse))
+mae = mean_absolute_error(test_data['Close'], y_hat_avg)
+print('MAE: '+str(mae))
+rmse = math.sqrt(mean_squared_error(test_data['Close'], y_hat_avg))
+print('RMSE: '+str(rmse))
+mape = np.mean(np.abs(y_hat_avg - test_data['Close'])/np.abs(test_data['Close']))
+print('MAPE: '+str(mape))

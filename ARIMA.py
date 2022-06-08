@@ -1,8 +1,11 @@
+import math
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 from pylab import rcParams
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from statsmodels.tsa.stattools import adfuller
 from pmdarima.arima import auto_arima
 # from statsmodels.tsa.arima_model import ARIMA
@@ -61,7 +64,7 @@ def test_stationarity(timeseries):
         output['critical value (%s)'%key] =  values
     print(output)
 
-# test_stationarity(df_close)
+test_stationarity(df_close)
 
 def decompose(timeseries):
     from statsmodels.tsa.seasonal import seasonal_decompose
@@ -71,7 +74,7 @@ def decompose(timeseries):
     fig.set_size_inches(16,9)
     plt.show()
 
-# decompose(df_close)
+decompose(df_close)
 
 #if not stationary then eliminate trend
 #Eliminate trend
@@ -94,7 +97,10 @@ log_series = eliminateTred(df_close)
 #split data into train and training set
 
 def split_data(df_log):
-    train_data, test_data = df_log[3:int(len(df_log)*0.8)], df_log[int(len(df_log)*0.8):]
+    # train_data, test_data = df_log[3:int(len(df_log)*0.9)], df_log[int(len(df_log)*0.9):]
+    length = 250
+    train_data = df_log[:len(df_log)-length]
+    test_data = df_log[len(df_log)-length:]
     plt.figure(figsize=(10,6))
     plt.grid(True)
     plt.xlabel('Dates')
@@ -147,8 +153,18 @@ plt.plot(test_data, color = 'blue', label='Actual Stock Price')
 plt.plot(fc_series, color = 'orange',label='Predicted Stock Price')
 plt.fill_between(lower_series.index, lower_series, upper_series,
                  color='k', alpha=.10)
-plt.title('ARCH CAPITAL GROUP Stock Price Prediction')
+plt.title('Prediction data')
 plt.xlabel('Time')
-plt.ylabel('ARCH CAPITAL GROUP Stock Price')
+plt.ylabel('Value')
 plt.legend(loc='upper left', fontsize=8)
 plt.show()
+
+# report performance
+mse = mean_squared_error(test_data, fc_series)
+print('MSE: '+str(mse))
+mae = mean_absolute_error(test_data, fc_series)
+print('MAE: '+str(mae))
+rmse = math.sqrt(mean_squared_error(test_data, fc_series))
+print('RMSE: '+str(rmse))
+mape = np.mean(np.abs(fc_series - test_data)/np.abs(test_data))
+print('MAPE: '+str(mape))
