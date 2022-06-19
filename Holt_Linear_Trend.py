@@ -7,13 +7,12 @@ from statsmodels.tsa.holtwinters import Holt
 
 dateparse = lambda dates: pd.datetime.strptime(dates, '%Y-%m-%d')
 
-
-dataName = 'jsw_arima.csv'
-data = yf.Ticker("TSLA").history(period="max", interval="1d",)
+company = "SYNA"
+dataName = company + '.csv'
+data = yf.Ticker(company).history(period="max", interval="1d",)
 data.to_csv(f"{dataName}",index = True, encoding="utf-8", index_label = "Date")
 
 df = pd.read_csv(f'{dataName}', header=0, index_col='Date', parse_dates=True, date_parser=dateparse).fillna(0)
-df.head()
 
 
 def split_data(df_log, train_persentage = 0.98):
@@ -25,7 +24,6 @@ train_data, test_data = split_data(df)
 
 x = sm.tsa.seasonal_decompose(train_data['Close'],model="multiplicative",period = 120).plot()
 result = sm.tsa.stattools.adfuller(train_data['Close'])
-# plt.show()
 
 y_hat_avg = test_data.copy()
 

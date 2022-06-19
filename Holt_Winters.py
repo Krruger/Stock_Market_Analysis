@@ -45,8 +45,8 @@ plt.show()
 forecast_data = pd.read_csv(f'{dataName}', header=0, index_col='Date', parse_dates=True, date_parser=dateparse).fillna(
     0)
 
-# forecast_data.index.freq = 'MS'
 length = 250
+
 # Split into train and test set
 train_airline = forecast_data[:len(forecast_data) - length]
 test_airline = forecast_data[len(forecast_data) - length:]
