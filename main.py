@@ -73,3 +73,4 @@ fig.show()
 fig.update_xaxes(rangebreaks=[dict(dvalue = 5*60*1000, values=dt_breaks)] )
 print(fig.layout.xaxis.rangebreaks)
 fig.show()
+

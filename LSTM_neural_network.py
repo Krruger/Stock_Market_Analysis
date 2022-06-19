@@ -105,106 +105,133 @@
 #
 
 ''' SECONE METHOD'''
-import math
-
-import yfinance as yf
-import pandas as pd
 import datetime as dt
-import matplotlib.pyplot as plt
+from datetime import datetime
+
 import numpy as np
+import pandas as pd
 import pandas_datareader as web
-
-from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
 from keras.layers import Dense, Dropout, LSTM
+from keras.models import Sequential
+from sklearn.preprocessing import MinMaxScaler
 
-company = 'FB'
-start = dt.datetime(2012,1,1)
-end = dt.datetime(2020,1,1)
 
-data = web.DataReader(company, 'yahoo', start, end)
+# Transform values by scaling each feature to a given range
 
-#Prepare Data
-scaler = MinMaxScaler(feature_range=(0,1))
-scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1,1))
+def stock_data(company='SYNA', start=dt.datetime(2012, 1, 1), end=datetime.now().date()):
+    return web.DataReader(company, 'yahoo', start, end)
 
-prediction_days = 120
-x_train =[]
-y_train = []
 
-#Split Into Train and Test Sets
-train_size = int(len(scaled_data)*0.67)
-test_size = len(scaled_data) - train_size
-train, test = scaled_data[0:train_size,:], scaled_data[train_size:len(scaled_data),:]
-print(train_size, test_size)
+# Prepare Data
+def prepare_data(data, train_percentage=0.80):
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_data = scaler.fit_transform(data.values.reshape(-1, 1))
+
+    # Split Into Train and Test Sets
+    train_size = int(len(scaled_data) * train_percentage)
+    test_size = len(scaled_data) - train_size
+    train, test = scaled_data[0:train_size, :], scaled_data[test_size:len(scaled_data), :]
+    return train, test
+
 
 def create_dataset(dataset, look_back=1):
-	dataX, dataY = [], []
-	for i in range(len(dataset)-look_back-1):
-		a = dataset[i:(i+look_back), 0]
-		dataX.append(a)
-		dataY.append(dataset[i + look_back, 0])
-	return np.array(dataX), np.array(dataY)
+    dataX, dataY = [], []
+    for i in range(len(dataset) - look_back - 1):
+        a = dataset[i:(i + look_back), 0]
+        dataX.append(a)
+        dataY.append(dataset[i + look_back, 0])
+    return np.array(dataX), np.array(dataY)
+
+
+def prediction_Data_Prepare(data, window_size):
+    x, y = [], []
+    z = data[['Close']]
+    scaler = MinMaxScaler(feature_range=(0, 1)).fit(z)
+    z = scaler.transform(z)
+    for i in range(window_size, len(z)):
+        x.append(z[i - window_size: i])
+        y.append(z[i])
+
+    return np.array(x), np.array(y)
+
+
+def forecast(x, y, future_day=100):
+    # generate the multi-step forecasts
+    y_future = []
+
+    x_pred = x[-1:, :, :]  # last observed input sequence
+    y_pred = y[-1]  # last observed target value
+
+    for i in range(future_day):
+        # feed the last forecast back to the model as an input
+        x_pred = np.append(x_pred[:, 1:, :], y_pred.reshape(1, 1, 1), axis=1)
+
+        # generate the next forecast
+        y_pred = model.predict(x_pred)
+
+        # save the forecast
+        y_future.append(y_pred.flatten()[0])
+    # transform the forecasts back to the original scale
+    y_future = np.array(y_future).reshape(-1, 1)
+    y_future = scaler.inverse_transform(y_future)
+    return y_future
+
+
+# ===================================== PREPARE DATA ====================================#
+company = 'SYNA'
+data = stock_data(company)
+train, test = prepare_data(data['Close'])
 
 trainX, trainY = create_dataset(train)
 testX, testY = create_dataset(test)
 
-#reshape input to be [samples, time steps, features]
-
+# reshape input to be [samples, time steps, features]
 trainX = np.reshape(trainY, (trainX.shape[0], 1, trainX.shape[1]))
 testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 
-# Build the Model
+# extract the input sequences and target values
+window_size = 60
+
+x, y = prediction_Data_Prepare(data, window_size)
+##=============================== Build the Model =======================================##
+
 model = Sequential()
 
-model.add(LSTM(units=100,  return_sequences=True, input_shape=(1, 1)))
+# model.add(LSTM(units=100,  return_sequences=True, input_shape=(1, 1)))
+model.add(LSTM(units=200, return_sequences=True, input_shape=x.shape[1:]))
 model.add(Dropout(0.2))
 
-model.add(LSTM(units=75,  return_sequences=True))
+model.add(LSTM(units=100, return_sequences=True))
 model.add(Dropout(0.2))
-
 
 model.add(LSTM(units=50))
 model.add(Dropout(0.2))
 
-model.add(Dense(units=1)) # Prediction of the next closing value
+model.add(Dense(units=1))  # Prediction of the next closing value
 
 model.compile(optimizer="adam", loss="mean_squared_error")
-model.fit(trainX, trainY, epochs=25, batch_size=1, verbose=2)
+model.fit(x, y, epochs=100, batch_size=128, verbose=2)
+##=========================== Time To Forecasting! =========================================##
 
-x = model
-#make prediction
-trainPredict = model.predict(trainX)
-testPredtict = model.predict(testX)
+future_sample = 365
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1, 1))
+y_future = forecast(x, y, future_sample)
+# transform the forecasts back to the original scale
 
-#invert prediction
-trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])
-testPredtict = scaler.inverse_transform(testPredtict)
-testY = scaler.inverse_transform([testY])
+##========================== Serialize and plotting ======================================##
+# organize the results in a data frame
+df_past = data[['Close']].reset_index()
+df_past.rename(columns={'index': 'Date'}, inplace=True)
+df_past['Date'] = pd.to_datetime(df_past['Date'])
+df_past['Forecast'] = np.nan
 
-# calculate root mean squared error
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
-print(f"Train Score = {trainScore}")
+df_future = pd.DataFrame(columns=['Date', 'Close', 'Forecast'])
+df_future['Date'] = pd.date_range(start=df_past['Date'].iloc[-1] + pd.Timedelta(days=1), periods=future_sample)
+df_future['Forecast'] = y_future.flatten()
+df_future['Close'] = np.nan
 
-testScore = math.sqrt(mean_squared_error(testY[0], testPredtict[:,0]))
-print(f"Test Score = {testScore}")
+results = df_past.append(df_future).set_index('Date')
 
-
-# shift train predictions for plotting
-look_back = 1
-trainPredictPlot = np.empty_like(scaled_data)
-trainPredictPlot[:, :] = np.nan
-trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
-# shift test predictions for plotting
-testPredictPlot = np.empty_like(scaled_data)
-testPredictPlot[:, :] = np.nan
-testPredictPlot[len(trainPredict)+(look_back*2)+1:len(scaled_data)-1, :] = testPredtict
-# plot baseline and predictions
-plt.plot(scaler.inverse_transform(scaled_data), label="Predicted")
-plt.plot(trainPredictPlot, label="Train")
-plt.plot(testPredictPlot, label="Test")
-plt.legend()
-plt.show()
+# plot the results
+results.plot(title=company)
