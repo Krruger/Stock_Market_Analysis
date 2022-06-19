@@ -1,9 +1,8 @@
-import numpy as np
-from statsmodels.tsa.api import SimpleExpSmoothing
-import pandas as pd
 import matplotlib.pyplot as plt
-import yfinance as yf
+import numpy as np
+import pandas as pd
 import statsmodels.api as sm
+import yfinance as yf
 from statsmodels.tsa.holtwinters import Holt
 
 dateparse = lambda dates: pd.datetime.strptime(dates, '%Y-%m-%d')
@@ -17,16 +16,8 @@ df = pd.read_csv(f'{dataName}', header=0, index_col='Date', parse_dates=True, da
 df.head()
 
 
-def split_data(df_log):
-    train_data, test_data = df_log[3:int(len(df_log)*0.98)], df_log[int(len(df_log)*0.98):]
-    # plt.figure(figsize=(10,6))
-    # plt.grid(True)
-    # plt.xlabel('Dates')
-    # plt.ylabel('Closing Prices')
-    # plt.plot(df_log, 'green', label='Train data')
-    # plt.plot(test_data, 'blue', label='Test data')
-    # plt.legend()
-    # plt.show()
+def split_data(df_log, train_persentage = 0.98):
+    train_data, test_data = df_log[3:int(len(df_log)*train_persentage)], df_log[int(len(df_log)*train_persentage):]
     return train_data, test_data
 
 #Aggregating the dataset at daily level

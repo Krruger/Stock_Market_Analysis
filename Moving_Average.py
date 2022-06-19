@@ -1,18 +1,16 @@
 import math
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import yfinance as yf
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from statsmodels.tsa.arima.model import ARIMA
-from statsmodels.tsa.api import ExponentialSmoothing
+
 dateparse = lambda dates: pd.datetime.strptime(dates, '%Y-%m-%d')
 
-
 dataName = 'jsw_arima.csv'
-data = yf.Ticker("TSLA").history(period="max", interval="1d",)
-data.to_csv(f"{dataName}",index = True, encoding="utf-8", index_label = "Date")
+data = yf.Ticker("TSLA").history(period="max", interval="1d", )
+data.to_csv(f"{dataName}", index=True, encoding="utf-8", index_label="Date")
 
 df = pd.read_csv(f'{dataName}', header=0, index_col='Date', parse_dates=True, date_parser=dateparse).fillna(0)
 df.head()
@@ -22,8 +20,8 @@ def split_data(df_log):
     # train_data, test_data = df_log[3:int(len(df_log)*0.95)], df_log[int(len(df_log)*0.95):]
     # plt.figure(figsize=(10,6))
     length = 250
-    train_data = df_log[:len(df_log)-length]
-    test_data = df_log[len(df_log)-length:]
+    train_data = df_log[:len(df_log) - length]
+    test_data = df_log[len(df_log) - length:]
     # plt.grid(True)
     # plt.xlabel('Dates')
     # plt.ylabel('Closing Prices')
@@ -32,13 +30,15 @@ def split_data(df_log):
     # plt.legend()
     # plt.show()
     return train_data, test_data
-#Aggregating the dataset at daily level
+
+
+# Aggregating the dataset at daily level
 train_data, test_data = split_data(df)
 #
 y_hat_avg = test_data.copy()
 y_hat_avg['moving_avg_forecast'] = train_data['Close'].rolling(25).mean().iloc[-2]
-y_hat_avg = pd.Series(y_hat_avg['moving_avg_forecast'],).set_axis(test_data.index)
-plt.figure(figsize=(12,8))
+y_hat_avg = pd.Series(y_hat_avg['moving_avg_forecast'], ).set_axis(test_data.index)
+plt.figure(figsize=(12, 8))
 plt.plot(train_data['Close'], label='Train')
 plt.plot(test_data['Close'], label='Test')
 plt.plot(y_hat_avg, label='moving_avg_forecast')
@@ -53,10 +53,10 @@ plt.show()
 
 # report performance
 mse = mean_squared_error(test_data['Close'], y_hat_avg)
-print('MSE: '+str(mse))
+print('MSE: ' + str(mse))
 mae = mean_absolute_error(test_data['Close'], y_hat_avg)
-print('MAE: '+str(mae))
+print('MAE: ' + str(mae))
 rmse = math.sqrt(mean_squared_error(test_data['Close'], y_hat_avg))
-print('RMSE: '+str(rmse))
-mape = np.mean(np.abs(y_hat_avg - test_data['Close'])/np.abs(test_data['Close']))
-print('MAPE: '+str(mape))
+print('RMSE: ' + str(rmse))
+mape = np.mean(np.abs(y_hat_avg - test_data['Close']) / np.abs(test_data['Close']))
+print('MAPE: ' + str(mape))

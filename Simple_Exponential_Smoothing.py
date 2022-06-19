@@ -57,5 +57,5 @@ def split_data(df_log):
 #Aggregating the dataset at daily level
 train_data, test_data = split_data(df)
 
-predict_date=150
+predict_date=151
 x = ses(df, train_data,test_data,0.8,predict_date)
