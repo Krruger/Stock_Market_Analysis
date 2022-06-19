@@ -79,6 +79,7 @@ class ARIMA_Model():
     def test_data(self):
         return self._test_data
 
+
 #Use auto_arima to find best p,d,q parameters for forecasting
 def arimaModel(train_data):
     model_autoARIMA = auto_arima(train_data, start_p=0, start_q=0,
@@ -97,36 +98,3 @@ def arimaModel(train_data):
     model_autoARIMA.plot_diagnostics(figsize=(15, 8))
     plt.show()
     return model_autoARIMA
-
-
-
-# start=dt.datetime(2012, 1, 1)
-# end=datetime.now().date()
-# company = 'SYNA'
-# p = ARIMA_Model(company, start, end)
-# p.test_stationarity()
-# p.eliminateTred()
-# p.split_data(250)
-# model_autoARIMA = arimaModel(p.train_data)
-#
-# #Prediction
-#
-# order = model_autoARIMA.order
-# p.buildModel(p.train_data, order)
-# fcast = p.fitted.get_forecast(len(p.test_data), alpha=0.2).summary_frame()
-#
-# fc_series = pd.Series(fcast['mean'], ).set_axis(p.test_data.index)
-# lower_series = pd.Series(fcast['mean_ci_lower'].set_axis(p.test_data.index))
-# upper_series = pd.Series(fcast['mean_ci_upper'].set_axis(p.test_data.index))
-# # Plot
-# plt.figure(figsize=(10, 5), dpi=100)
-# plt.plot(p.train_data, label='training data')
-# plt.plot(p.test_data, color='blue', label='Actual Stock Price')
-# plt.plot(fc_series, color='orange', label='Predicted Stock Price')
-# plt.fill_between(lower_series.index, lower_series, upper_series,
-#                  color='k', alpha=.10)
-# plt.title('Prediction data')
-# plt.xlabel('Time')
-# plt.ylabel('Value')
-# plt.legend(loc='upper left', fontsize=8)
-# plt.show()

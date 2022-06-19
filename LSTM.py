@@ -14,7 +14,6 @@ from keras.layers import Dense, Dropout, LSTM
 # Transform values by scaling each feature to a given range
 
 class NeuralNetwork():
-
     def __init__(self, company: str, start: datetime, end: datetime):
         self._data = web.DataReader(company, 'yahoo', start, end)
         self._scaler = MinMaxScaler(feature_range=(0, 1))
@@ -87,49 +86,3 @@ class NeuralNetwork():
     @property
     def scale(self):
         return self._scaler
-
-# start=dt.datetime(2012, 1, 1)
-# end=datetime.now().date()
-# company = "SYNA"
-# p =NeuralNetwork(company, start, end)
-# p.prepare_data(0.80)
-# p.prediction_Data_Prepare(60)
-#
-# ##=============================== Build the Model =======================================##
-#
-# model = Sequential()
-#
-# # model.add(LSTM(units=100,  return_sequences=True, input_shape=(1, 1)))
-# model.add(LSTM(units=200, return_sequences=True, input_shape=p.x.shape[1:]))
-# model.add(Dropout(0.2))
-#
-# model.add(LSTM(units=100, return_sequences=True))
-# model.add(Dropout(0.2))
-#
-# model.add(LSTM(units=50))
-# model.add(Dropout(0.2))
-#
-# model.add(Dense(units=1))  # Prediction of the next closing value
-#
-# model.compile(optimizer="adam", loss="mean_squared_error")
-# model.fit(p.x, p.y, epochs=5, batch_size=128, verbose=2)
-#
-# future_sample = 150
-#
-# p.forecast(future_sample, model)
-# ##========================== Serialize and plotting ======================================##
-# # organize the results in a data frame
-# df_past = p._data[['Close']].reset_index()
-# df_past.rename(columns={'index': 'Date'}, inplace=True)
-# df_past['Date'] = pd.to_datetime(df_past['Date'])
-# df_past['Forecast'] = np.nan
-#
-# df_future = pd.DataFrame(columns=['Date', 'Close', 'Forecast'])
-# df_future['Date'] = pd.date_range(start=df_past['Date'].iloc[-1] + pd.Timedelta(days=1), periods=future_sample)
-# df_future['Forecast'] = p.y_future.flatten()
-# df_future['Close'] = np.nan
-#
-# results = df_past.append(df_future).set_index('Date')
-#
-# # plot the results
-# results.plot(title=company)
