@@ -14,12 +14,14 @@ from keras.layers import Dense, Dropout, LSTM
 # Transform values by scaling each feature to a given range
 
 class NeuralNetwork():
-    def __init__(self, company: str, start: datetime, end: datetime):
-        self._data = web.DataReader(company, 'yahoo', start, end)
+    def __init__(self, df):
+        # ,company: str, start: datetime, end: datetime):
+        # self._data = web.DataReader(company, 'yahoo', start, end)
+        self._data = df
         self._scaler = MinMaxScaler(feature_range=(0, 1))
-        self._scaled_data = self._scaler.fit_transform(self.data.values.reshape(-1, 1))
+        self._scaled_data = self._scaler.fit_transform(self._data.values.reshape(-1, 1))
 
-    def prepare_data(self, train_percentage=0.80):
+    def prepare_data(self, future_day):
 
         def _create_dataset(dataset, look_back=1):
             dataX, dataY = [], []
@@ -30,7 +32,7 @@ class NeuralNetwork():
             return np.array(dataX), np.array(dataY)
 
         # Split Into Train and Test Sets
-        train_size = int(len(self._scaled_data) * train_percentage)
+        train_size = int(len(self._scaled_data) - future_day)
         test_size = len(self._scaled_data) - train_size
         self._train, self._test = self._scaled_data[0:train_size, :], self._scaled_data[test_size:len(self._scaled_data), :]
         self._trainX, self._trainY = _create_dataset(self._train)
@@ -59,7 +61,6 @@ class NeuralNetwork():
 
             # generate the next forecast
             y_pred = model.predict(x_pred)
-
             # save the forecast
             y_future.append(y_pred.flatten()[0])
         # transform the forecasts back to the original scale
@@ -86,3 +87,11 @@ class NeuralNetwork():
     @property
     def scale(self):
         return self._scaler
+
+    @property
+    def train(self):
+        return self._train
+
+    @property
+    def test(self):
+        return self._test

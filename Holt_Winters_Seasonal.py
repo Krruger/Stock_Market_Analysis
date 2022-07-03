@@ -17,8 +17,8 @@ df = pd.read_csv(f'{dataName}', header=0, index_col='Date', parse_dates=True, da
 df.head()
 
 
-def split_data(df_log, train_percentage=0.8):
-    train_data, test_data = df_log[3:int(len(df_log) * train_percentage)], df_log[int(len(df_log) * train_percentage):]
+def split_data(df, forecast_days=365):
+    train_data, test_data = df[:int(len(df) - forecast_days)], df[int(len(df) - forecast_days):]
     return train_data, test_data
 
 
@@ -26,7 +26,8 @@ def split_data(df_log, train_percentage=0.8):
 train_data, test_data = split_data(df)
 
 y_hat_avg = test_data.copy()
-fit1 = ExponentialSmoothing(np.asarray(train_data['Close']), seasonal_periods=2, trend='add', seasonal='add', ).fit()
+fit1 = ExponentialSmoothing(np.asarray(train_data['Close']), seasonal_periods=50, trend='add', seasonal='mul',
+                            initialization_method='estimated').fit()
 y_hat_avg['Holt_Winter'] = fit1.forecast(len(test_data['Close']))
 plt.figure(figsize=(16, 8))
 plt.plot(train_data['Close'], label='Train')
@@ -34,13 +35,3 @@ plt.plot(test_data['Close'], label='Test')
 plt.plot(y_hat_avg['Holt_Winter'], label='Holt_Winter')
 plt.legend(loc='best')
 plt.show()
-
-# report performance
-mse = mean_squared_error(test_data['Close'], y_hat_avg['Holt_Winter'])
-print('MSE: ' + str(mse))
-mae = mean_absolute_error(test_data['Close'], y_hat_avg['Holt_Winter'])
-print('MAE: ' + str(mae))
-rmse = math.sqrt(mean_squared_error(test_data['Close'], y_hat_avg['Holt_Winter']))
-print('RMSE: ' + str(rmse))
-mape = np.mean(np.abs(y_hat_avg['Holt_Winter'] - test_data['Close']) / np.abs(test_data['Close']))
-print('MAPE: ' + str(mape))

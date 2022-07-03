@@ -14,10 +14,11 @@ from statsmodels.tsa.stattools import adfuller
 
 class ARIMA_Model():
 
-    def __init__(self, company: str, start: datetime, end: datetime):
-        self._data = web.DataReader(company, 'yahoo', start, end)
-        self._df_close = self._data['Close']
-
+    # def __init__(self, company: str, start: datetime, end: datetime):
+    def __init__(self, df_values):
+        # self._data = web.DataReader(company, 'yahoo', start, end)
+        # self._df_close = self._data['Close']
+        self._df_close = df_values
     def test_stationarity(self):
         # Determing rolling statistics
         rolmean = self._df_close.rolling(12).mean()
@@ -42,6 +43,7 @@ class ARIMA_Model():
     def eliminateTred(self):
         rcParams['figure.figsize'] = 10, 6
         self._log_series = np.log(self._df_close)
+        self._log_series = self._df_close
         moving_avg = self._df_close.rolling(12).mean()
         std_dev = self._df_close.rolling(12).std()
         plt.legend(loc='best')
@@ -51,8 +53,8 @@ class ARIMA_Model():
         plt.legend()
         plt.show()
 
-    def split_data(self, train_percentage=0.8):
-        self._train_data, self._test_data = self._log_series[3:int(len(self._log_series)*train_percentage)], self._log_series[int(len(self._log_series)*train_percentage):]
+    def split_data(self, forecast_days=365):
+        self._train_data, self._test_data = self._log_series[0:int(len(self._log_series) - forecast_days)], self._log_series[int(len(self._log_series) - forecast_days):]
         print(self._test_data)
         plt.figure(figsize=(10, 6))
         plt.grid(True)
@@ -64,8 +66,10 @@ class ARIMA_Model():
         plt.show()
 
     def buildModel(self, train_data, order: tuple):
-        model = ARIMA(train_data, order=order, trend=[0, 1])
+        model = ARIMA(train_data, order=order)
         self._fitted = model.fit()
+        self._fitted.summary()
+
 
     @property
     def fitted(self):
@@ -85,9 +89,9 @@ def arimaModel(train_data):
     model_autoARIMA = auto_arima(train_data, start_p=0, start_q=0,
                                  test='adf',  # use adftest to find optimal 'd'
                                  max_p=10, max_q=10,  # maximum p and q
-                                 m=1,  # frequency of series
+                                 m=100,  # frequency of series
                                  d=None,  # let model determine 'd'
-                                 seasonal=False,  # No Seasonality
+                                 seasonal=True,  # No Seasonality
                                  start_P=0,
                                  D=0,
                                  trace=True,
@@ -95,6 +99,7 @@ def arimaModel(train_data):
                                  suppress_warnings=True,
                                  stepwise=True)
     print(model_autoARIMA.summary())
+    print(model_autoARIMA.aic())
     model_autoARIMA.plot_diagnostics(figsize=(15, 8))
     plt.show()
     return model_autoARIMA
